@@ -1,4 +1,4 @@
-name: "pre-release"
+name: "dev-build"
 
 on:
   workflow_dispatch
@@ -8,7 +8,6 @@ jobs:
     name: Build Windows (${{ matrix.job.target }})
     permissions: write-all
     runs-on: windows-latest
-    needs: release
     strategy:
       fail-fast: false
       matrix:
