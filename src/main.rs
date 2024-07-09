@@ -1,14 +1,14 @@
-use std::{error::Error, sync::Arc};
+use crate::clipboard::Clipboard;
 use clap::{command, Parser};
 use clipboard::ClipboardObject;
+use std::{error::Error, sync::Arc};
 use tokio::{
     io::{AsyncRead, AsyncWrite, AsyncWriteExt},
     net::{TcpListener, TcpStream},
     select,
 };
-use tracing::{debug, error_span, info, instrument, Instrument, Level, trace};
+use tracing::{debug, error_span, info, instrument, trace, Instrument, Level};
 use tracing_subscriber::FmtSubscriber;
-use crate::clipboard::Clipboard;
 
 mod clipboard;
 
@@ -33,8 +33,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // completes the builder.
         .finish();
 
-    tracing::subscriber::set_global_default(subscriber)
-        .expect("setting default subscriber failed");
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
     let args = Cli::parse();
 
@@ -73,7 +72,7 @@ async fn start_server(clipboard: Arc<Clipboard>) -> Result<(), Box<dyn Error + S
                 trace!("Finishing server connection");
                 Ok::<_, Box<dyn Error + Send + Sync>>(())
             }
-                .instrument(error_span!("Connection", %ip)),
+            .instrument(error_span!("Connection", %ip)),
         );
     }
 
@@ -96,9 +95,9 @@ async fn start_client(
     eprintln!("Clipboards connected");
 
     if let Err(err) = select! {
-            result = recv_clipboard(clipboard.clone(), reader).in_current_span() => result,
-            result = send_clipboard(clipboard.clone(), writer).in_current_span() => result,
-        } {
+        result = recv_clipboard(clipboard.clone(), reader).in_current_span() => result,
+        result = send_clipboard(clipboard.clone(), writer).in_current_span() => result,
+    } {
         debug!(error = %err, "Client error");
     }
 
