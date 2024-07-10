@@ -33,6 +33,11 @@
       };
     pkgs = genSystems (system: import nixpkgs {inherit system;});
   in {
+    packages = genSystems (system: rec {
+      default = pkgs.${system}.callPackage ./nix {};
+      clipshare = default;
+    });
+    homeManagerModules.default = import ./nix/hm-module.nix self;
     devShells = genSystems (system: let
       pkgs = pkgsFor system;
       rust = mkRustToolchain pkgs;
