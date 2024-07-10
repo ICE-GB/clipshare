@@ -1,58 +1,34 @@
 # Clipshare
 
-Do you ever have to work on multiple machines?
+Reference https://github.com/reu/clipshare
 
-Do you ever used your Github™ Gists just to send some text between then?
-
-Clipshare is here to save the day!
-
-You can now secure share your clipboard between your machines (well, given they are on the same network).
+Just enough for me
 
 ## How to use
 
+```bash
+clipshare --help
+```
+
+```text
+Share clipboard between machines on your local network
+
+Usage: clipshare [OPTIONS]
+
+Options:
+  -p, --port <PORT>  Server port
+  -u, --url <URL>    Remote server url
+      --no-clear     Don´t clear the clipboard on start
+  -h, --help         Print help
+  -V, --version      Print version
+```
+
 On one machine:
 ```bash
-$ clipshare
-Run `clipshare 11337` on another machine of your network
+clipshare --port 11337
 ```
 
 And then on another machine on the same network
 ```bash
-$ clipshare 113377
-Connecting to clipboard 113377...
-Clipboards connected
+clipshare --url ip:11337
 ```
-
-And voilá, the clipboards of both machines are now magically the same!
-
-## Instalation
-
-### Pre-Built Binary
-Each release comes with pre-built binaries of several platforms. Grab it from [Github Releases](https://github.com/reu/clipshare/releases).
-
-### Cargo
-If you are a Rust enthusiast, installing via Cargo is just:
-```bash
-$ cargo install clipshare
-```
-
-### From source
-Make sure you have Rust installed, then:
-```bash
-$ git clone https://github.com/reu/clipshare.git
-$ cd clipshare
-$ cargo build --release
-$ cp ./target/release/clipshare /usr/local/bin/
-```
-
-## Limitations
-
-Yes
-
-<sup><sub>Really, it is quite limited, it can only share utf8 encoded text and images. Unfortunately you can´t share files for now.</sub></sup>
-
-## Implementation
-
-Nothing fancy here, we just broadcast the internal ip on the network and connect the processes using the informed ~~port~~ "clipboard code".
-
-The data then is transfered between the machines via an encrypted TLS connection.
