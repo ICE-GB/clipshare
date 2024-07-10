@@ -26,13 +26,8 @@ in {
       default = pkgs.stdenv.isLinux;
       description = "Whether to enable to systemd service for clipshare on linux.";
     };
-    launchd = mkOption {
-      type = types.bool;
-      default = pkgs.stdenv.isDarwin;
-      description = "Whether to enable to launchd service for clipshare on macOS.";
-    };
     port = lib.mkOption {
-      type = types.integer
+      type = types.integer;
       default = 35713;
       example = 35713;
       description = ''
@@ -50,6 +45,7 @@ in {
       Service = {
         Type = "simple";
         ExecStart = "${cfg.package}/bin/clipshare --port ${cfg.port}";
+        Restart = "on-failure";
       };
       Install.WantedBy = [
         (lib.mkIf config.wayland.windowManager.hyprland.systemd.enable "hyprland-session.target")
