@@ -43,7 +43,7 @@ in {
       };
       Service = {
         Type = "simple";
-        ExecStart = "${cfg.package}/bin/clipshare --port ${lib.toString cfg.port}";
+        ExecStart = "${cfg.package}/bin/clipshare --port ${toString cfg.port}";
         Restart = "on-failure";
       };
       Install.WantedBy = [
