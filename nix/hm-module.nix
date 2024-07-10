@@ -7,7 +7,6 @@ self: {
 with lib; let
   cfg = config.programs.clipshare;
   defaultPackage = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
-  tomlFormat = pkgs.formats.toml {};
 in {
   options.programs.clipshare = with types; {
     enable = mkEnableOption "Whether or not to enable clipshare.";
@@ -27,7 +26,7 @@ in {
       description = "Whether to enable to systemd service for clipshare on linux.";
     };
     port = lib.mkOption {
-      type = types.integer;
+      type = types.port;
       default = 35713;
       example = 35713;
       description = ''
