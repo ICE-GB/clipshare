@@ -59,7 +59,7 @@ async fn start_server(
     clipboard: Arc<Clipboard>,
     port: Option<u16>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let listener = TcpListener::bind(("0.0.0.0", port.unwrap_or_else(|| 0))).await?;
+    let listener = TcpListener::bind(("0.0.0.0", port.unwrap_or(0))).await?;
     let port = listener.local_addr()?.port();
     eprintln!("Run `clipshare ip:{port}` on another machine of your network");
 
