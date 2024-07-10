@@ -15,42 +15,12 @@ jobs:
           - { os: windows-latest, target: x86_64-pc-windows-gnu }
           - { os: windows-latest, target: x86_64-pc-windows-msvc }
     steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          target: ${{ matrix.job.target }}
-
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --locked --target=${{ matrix.job.target }}
-
-      - name: Archive
-        run: 7z -y a clipshare-${{ needs.release.outputs.release_version }}-${{ matrix.job.target }}.exe.zip target/${{ matrix.job.target }}/release/clipshare.exe
+      - uses: actions/checkout@v4
+      - name: Release Build
+        run: cargo build --release --locked --target=${{ matrix.job.target }}
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: clipshare-${{ needs.release.outputs.release_version }}-${{ matrix.job.target }}
-          path: clipshare-${{ needs.release.outputs.release_version }}-${{ matrix.job.target }}.exe.zip
-
-  dev-build:
-    name: "Development Build"
-    needs: [build-win]
-    runs-on: "ubuntu-latest"
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-      - name: Create Release
-        uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
-          prerelease: true
-          title: "Development Build"
-          files: |
-            build-win/clipshare-*.zip
+          name: clipshare-${{ matrix.job.target }}.exe
+          path: target/${{ matrix.job.target }}/release/clipshare.exe
