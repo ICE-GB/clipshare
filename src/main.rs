@@ -15,8 +15,13 @@ mod clipboard;
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
-    /// Clipboard id to connect to
-    clipboard: Option<String>,
+    /// Server port
+    #[arg(short, long)]
+    port: Option<u16>,
+
+    /// Remote server url
+    #[arg(short, long)]
+    url: Option<String>,
 
     /// Don´t clear the clipboard on start
     #[arg(long)]
@@ -43,15 +48,18 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         Clipboard::cleared()
     });
 
-    match args.clipboard {
-        Some(addr) => start_client(clipboard, addr).await,
-        None => start_server(clipboard).await,
+    match args.url {
+        Some(url) => start_client(clipboard, url).await,
+        None => start_server(clipboard, args.port).await,
     }
 }
 
 #[instrument(skip(clipboard))]
-async fn start_server(clipboard: Arc<Clipboard>) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let listener = TcpListener::bind("0.0.0.0:0").await?;
+async fn start_server(
+    clipboard: Arc<Clipboard>,
+    port: Option<u16>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let listener = TcpListener::bind(("0.0.0.0", port.unwrap_or_else(|| 0))).await?;
     let port = listener.local_addr()?.port();
     eprintln!("Run `clipshare ip:{port}` on another machine of your network");
 
