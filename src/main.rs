@@ -3,7 +3,7 @@ use clap::{command, Parser};
 use clipboard::ClipboardObject;
 use std::{error::Error, sync::Arc};
 use tokio::{
-    io::{AsyncRead, AsyncWrite, AsyncWriteExt},
+    io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
     net::{TcpListener, TcpStream},
     select,
 };
@@ -26,6 +26,10 @@ struct Cli {
     /// Don´t clear the clipboard on start
     #[arg(long)]
     no_clear: bool,
+
+    /// Key
+    #[arg(short, long)]
+    key: Option<String>,
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -48,9 +52,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         Clipboard::cleared()
     });
 
+    let key = std::env::var("CLIPSHARE_KEY").unwrap_or(args.key.unwrap_or("clipshare".to_string()));
+    trace!(key);
+
     match args.url {
-        Some(url) => start_client(clipboard, url).await,
-        None => start_server(clipboard, args.port).await,
+        Some(url) => start_client(clipboard, url, key).await,
+        None => start_server(clipboard, args.port, key).await,
     }
 }
 
@@ -58,6 +65,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 async fn start_server(
     clipboard: Arc<Clipboard>,
     port: Option<u16>,
+    key: String,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let listener = TcpListener::bind(("0.0.0.0", port.unwrap_or(0))).await?;
     let port = listener.local_addr()?.port();
@@ -67,9 +75,38 @@ async fn start_server(
         trace!("New connection arrived");
         let ip = addr.ip();
         let clipboard = clipboard.clone();
+        let key: String = key.clone();
         tokio::spawn(
             async move {
-                let (reader, writer) = tokio::io::split(stream);
+                let (mut reader, mut writer) = tokio::io::split(stream);
+
+                let mut buf = [0; 1];
+                reader.read_exact(&mut buf).await?;
+                trace!("Read kind {buf:?}");
+                match buf[0] {
+                    0 => {
+                        let mut buf = [0; std::mem::size_of::<u64>()];
+                        reader.read_exact(&mut buf).await?;
+                        let len = u64::from_be_bytes(buf).try_into()?;
+                        trace!(len, "Read key len");
+
+                        let mut buf = vec![0; len];
+                        reader.read_exact(&mut buf).await?;
+                        trace!(len, "Read key");
+
+                        let client_key = std::str::from_utf8(&buf)?;
+                        trace!(client_key);
+
+                        if !key.eq(&client_key) {
+                            error_span!("Key mismatch");
+                            writer.shutdown().await?;
+                        }
+                    }
+                    _n => {
+                        error_span!("Key error");
+                        writer.shutdown().await?;
+                    }
+                }
 
                 if let Err(err) = select! {
                     result = recv_clipboard(clipboard.clone(), reader) => result,
@@ -91,6 +128,7 @@ async fn start_server(
 async fn start_client(
     clipboard: Arc<Clipboard>,
     addr: String,
+    key: String,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     info!("starting client");
 
@@ -98,9 +136,19 @@ async fn start_client(
     let stream = TcpStream::connect(addr).await?;
     let ip = stream.peer_addr()?.ip();
 
-    let (reader, writer) = tokio::io::split(stream);
+    let (reader, mut writer) = tokio::io::split(stream);
     let span = error_span!("Connection", %ip).entered();
     eprintln!("Clipboards connected");
+
+    // 发送一个密钥
+    let buf = [
+        &[0][..],
+        &u64::try_from(key.as_bytes().len())?.to_be_bytes()[..],
+    ]
+    .concat();
+    writer.write_all(&buf).await?;
+    writer.write_all(key.as_bytes()).await?;
+    writer.flush().await?;
 
     if let Err(err) = select! {
         result = recv_clipboard(clipboard.clone(), reader).in_current_span() => result,
