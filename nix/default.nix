@@ -2,7 +2,8 @@
   rustPlatform,
   lib,
   pkgs,
-}: let
+}:
+let
   cargoToml = builtins.fromTOML (builtins.readFile ../Cargo.toml);
   pname = cargoToml.package.name;
   version = cargoToml.package.version;
@@ -13,9 +14,6 @@ rustPlatform.buildRustPackage {
 
   nativeBuildInputs = with pkgs; [
     pkg-config
-  ];
-
-  buildInputs = with pkgs; [
   ];
 
   src = builtins.path {
