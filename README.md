@@ -1,6 +1,6 @@
 # Clipshare
 
-Reference https://github.com/reu/clipshare
+Reference <https://github.com/reu/clipshare>
 
 Just enough for me
 
@@ -24,11 +24,13 @@ Options:
 ```
 
 On one machine:
+
 ```bash
 clipshare --port 11337
 ```
 
 And then on another machine on the same network
+
 ```bash
 clipshare --url ip:11337
 ```
